@@ -16,6 +16,8 @@ def get_pipe_group():
 
 class Pipe(Scrollable):
     def __init__(self, x, y, rotated):
+        self.scored = False  # 아직 점수로 계산되지 않음
+        self.rotated = rotated
         super().__init__(x, y, PIPE_IMAGE_PATH)
         if rotated:
             self.image = pygame.transform.rotate(self.image, 180)

@@ -16,6 +16,9 @@ class Game():
     def __init__(self):
         super().__init__()
         self.state = GameState.RUNNING
+        self.font = pygame.font.Font(None, 24)
+
+        self.score = 0
 
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
@@ -38,6 +41,7 @@ class Game():
 
             if self.state == GameState.RUNNING:
                 self.check_collision()
+                self.check_score_update()
             elif self.state == GameState.RESTART and self.groups["restart"].check_clicked():
                 self.__init__()
 
@@ -48,6 +52,11 @@ class Game():
             self.update_and_draw_group("restart")
         elif self.state == GameState.RUNNING:
             self.update_and_draw_group("bg", "bird", "pipe", "ground")
+
+        # 점수 그리기
+        score_text = self.font.render(f"Score: {self.score}", True, (255, 255, 255))
+        self.screen.blit(score_text, (10, 10))
+
         pygame.display.flip()
 
     def update_and_draw_group(self, *group_keys):
@@ -75,3 +84,13 @@ class Game():
                 return True
 
         return bird.rect.colliderect(ground.rect)
+
+    def check_score_update(self):
+        bird = self.groups["bird"].sprites()[0]
+        pipes = self.groups["pipe"].sprites()
+
+        # 파이프는 한 쌍으로 움직이므로, 돌아가 있는 위쪽 파이프를 대상으로만 검사
+        for pipe in filter(lambda pipe: pipe.rotated, pipes):
+            if pipe.rect.right < bird.rect.left and not pipe.scored:
+                self.score += 1
+                pipe.scored = True
