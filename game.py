@@ -1,16 +1,21 @@
+import enum
 import pygame
 
-
-from click_event_observer import ClickEventObserver
 from constants import FRAME_PER_SECOND, SCREEN_WIDTH, SCREEN_HEIGHT
 from bg import get_bg_group, get_ground_group
 from bird import get_bird_group
 from pipe import get_pipe_group
+from restart import get_restart_group
 
-class Game(ClickEventObserver):
+class GameState(enum.Enum):
+    END = 0
+    RUNNING = 1
+    RESTART = 2
+
+class Game():
     def __init__(self):
         super().__init__()
-        self.running = True
+        self.state = GameState.RUNNING
 
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
@@ -23,32 +28,42 @@ class Game(ClickEventObserver):
             "bird": get_bird_group(),
             "pipe": get_pipe_group(),
             "ground": get_ground_group(),
+            "restart": get_restart_group(),
         }
 
     def run(self):
-        while self.running:
+        while self.state != GameState.END:
             self.clock.tick(FRAME_PER_SECOND)
             self.update_and_draw_groups()
-            self.check_collision()
+
+            if self.state == GameState.RUNNING:
+                self.check_collision()
+            elif self.state == GameState.RESTART and self.groups["restart"].check_clicked():
+                self.__init__()
+
             self.check_quit_event()
 
-        pygame.quit()
-
     def update_and_draw_groups(self):
-        for key, group in self.groups.items():
-            if key != "restart":
-                group.update()
-                group.draw(self.screen)
+        if self.state == GameState.RESTART:
+            self.update_and_draw_group("restart")
+        elif self.state == GameState.RUNNING:
+            self.update_and_draw_group("bg", "bird", "pipe", "ground")
         pygame.display.flip()
+
+    def update_and_draw_group(self, *group_keys):
+        for key in group_keys:
+            group = self.groups[key]
+            group.update()
+            group.draw(self.screen)
 
     def check_quit_event(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.running = False
+                self.state = GameState.END
 
     def check_collision(self):
         if self.has_collided():
-            self.running = False
+            self.state = GameState.RESTART
 
     def has_collided(self):
         bird = self.groups["bird"].sprites()[0]
