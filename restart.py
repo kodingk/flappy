@@ -23,7 +23,7 @@ class RestartButtonGroup(pygame.sprite.Group, ClickEventObserver):
         self.add(RestartButton())
 
     def check_clicked(self):
-        return super().check_clicked() and self.sprites()[0].check_clicked()
+        return self.sprites()[0].check_clicked()
 
 
 def get_restart_group():
